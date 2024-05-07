@@ -19,21 +19,21 @@ def compute_metrics(df, save_path):
     findings = df['findings'].tolist()
     
     ### BART Score ###
-    bart_scorer = BARTScorer(device='cuda:0', checkpoint='facebook/bart-large')
-    bart_cnn_scorer = BARTScorer(device='cuda:0', checkpoint='facebook/bart-large-cnn')
-    bart_ParaBank_scorer = BARTScorer(device='cuda:0', checkpoint='facebook/bart-large-cnn') # from GitHub
-    bart_ParaBank_scorer.load(path='BARTScore/checkpoints/bart_score.pth')
+    bart_scorer = BARTScorer(device='cpu', checkpoint='facebook/bart-large')
+    bart_cnn_scorer = BARTScorer(device='cpu', checkpoint='facebook/bart-large-cnn')
+    bart_ParaBank_scorer = BARTScorer(device='cpu', checkpoint='facebook/bart-large-cnn') # from GitHub
+    bart_ParaBank_scorer.load(path='metrics/BARTScore/checkpoints/bart_score.pth')
 
-    bart_PT_scorer = BARTScorer(device='cuda:0', checkpoint='BARTScore/checkpoints/ -large')
+    bart_PT_scorer = BARTScorer(device='cpu', checkpoint='metrics/BARTScore/checkpoints/bart-large')
 
     ### PEGASUS Score ###
-    pegasus_PT_scorer = BARTScorer(device='cuda:0', checkpoint='BARTScore/checkpoints/pegasus-large')
+    pegasus_PT_scorer = BARTScorer(device='cpu', checkpoint='metrics/BARTScore/checkpoints/pegasus-large')
 
     ### T5 Score ###
-    t5_PT_scorer = BARTScorer(device='cuda:0', checkpoint='BARTScore/checkpoints/flan-t5')
+    t5_PT_scorer = BARTScorer(device='cpu', checkpoint='metrics/BARTScore/checkpoints/flan-t5')
 
     ### prism ###
-    prism = Prism(model_dir='prism/checkpoints/m39v1', lang='en')
+    prism = Prism(model_dir='metrics/prism/checkpoints/m39v1', lang='en')
     print('Prism identifier:', prism.identifier()) # print the identifier of the model
 
     batch_size = 1
@@ -63,6 +63,10 @@ def compute_metrics(df, save_path):
         gen_text = AI_impression[i]
         gt_text = impression[i]
         gt_findings = findings[i]
+        
+        # Ensure gt_text and gen_text are strings
+        gt_text = str(gt_text) if not isinstance(gt_text, str) else gt_text
+        gen_text = str(gen_text) if not isinstance(gen_text, str) else gen_text
 
         bart_p_ind = bart_scorer.score(srcs=[gt_text], tgts=[gen_text], batch_size=batch_size)[0] # precision
         bart_r_ind = bart_scorer.score(srcs=[gen_text], tgts=[gt_text], batch_size=batch_size)[0] # recall
@@ -143,27 +147,32 @@ def compute_metrics(df, save_path):
 
 if __name__ == '__main__':
     # Get data
-    #text_file = ['PGN_200', 'Clinicallongformer2Roberta_200', 'BART_200', 'PEGASUS_200']
-    text_file  = ['pgn-w-bg',
-                  'clinicallongformer2roberta', 
-                  'bart-large', 'biobart-large', 
-                  'pegasus-large'
-                  't5-large', 'clinical-t5-large', 'flan-t5-large', 'flan-t5-XL',
-                  'gpt2-xl', 
-                  'opt-1.3b'
-                  'llama-7b-lora', 'alpaca-7b-lora'
-                  ]
+    # text_file = ['PGN_200', 'Clinicallongformer2Roberta_200', 'BART_200', 'PEGASUS_200']
+    # text_file  = ['pgn-w-bg',
+    #               'clinicallongformer2roberta', 
+    #               'bart-large', 'biobart-large', 
+    #               'pegasus-large'
+    #               't5-large', 'clinical-t5-large', 'flan-t5-large', 'flan-t5-XL',
+    #               'gpt2-xl', 
+    #               'opt-1.3b'
+    #               'llama-7b-lora', 'alpaca-7b-lora'
+    #               ]
+    text_file = ['test-file']
     
     os.makedirs('test_cases/metrics', exist_ok=True)
     for filename in text_file:
         # read excel file containing test cases along with model-generated impressions
         df = pd.read_excel(f'test_cases/{filename}_all.xlsx')
-        # Clean text
+        # # Clean text
         df = df[df['AI_impression'].notna()].reset_index(drop=True)
-        df['impressions'] = df['impressions'].apply(lambda x: x.replace('\n',' '))
-        df['AI_impression'] = df['AI_impression'].apply(lambda x: x.replace('\n',' '))
-        df['findings'] = df['findings'].apply(lambda x: x.replace('\n',' '))
-        df['findings_info'] = df['findings_info'].apply(lambda x: x.replace('\n',' '))
+        # df['impressions'] = df['impressions'].apply(lambda x: x.replace('\n',' '))
+        # df['AI_impression'] = df['AI_impression'].apply(lambda x: x.replace('\n',' '))
+        # df['findings'] = df['findings'].apply(lambda x: x.replace('\n',' '))
+        # df['findings_info'] = df['findings_info'].apply(lambda x: x.replace('\n',' '))
+        df['impressions'] = df['impressions'].apply(lambda x: x.replace('\n',' ') if isinstance(x, str) else x)
+        df['AI_impression'] = df['AI_impression'].apply(lambda x: x.replace('\n',' ') if isinstance(x, str) else x)
+        df['findings'] = df['findings'].apply(lambda x: x.replace('\n',' ') if isinstance(x, str) else x)
+        df['findings_info'] = df['findings_info'].apply(lambda x: x.replace('\n',' ') if isinstance(x, str) else x)
 
         compute_metrics(df, save_path=f'test_cases/metrics/{filename}_metrics_text_generation.xlsx') 
 

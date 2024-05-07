@@ -92,15 +92,16 @@ def compute_metrics(df, save_path):
 if __name__ == '__main__':
     # Get data
     #text_file = ['PGN_200', 'Clinicallongformer2Roberta_200', 'BART_200', 'PEGASUS_200']
-    text_file  = ['pgn-w-bg',
-                  'clinicallongformer2roberta', 
-                  'bart-large', 'biobart-large', 
-                  'pegasus-large'
-                  't5-large', 'clinical-t5-large', 'flan-t5-large', 'flan-t5-XL',
-                  'gpt2-xl', 
-                  'opt-1.3b'
-                  'llama-7b-lora', 'alpaca-7b-lora'
-                  ]
+    # text_file  = ['pgn-w-bg',
+    #               'clinicallongformer2roberta', 
+    #               'bart-large', 'biobart-large', 
+    #               'pegasus-large'
+    #               't5-large', 'clinical-t5-large', 'flan-t5-large', 'flan-t5-XL',
+    #               'gpt2-xl', 
+    #               'opt-1.3b'
+    #               'llama-7b-lora', 'alpaca-7b-lora'
+    #               ]
+    text_file = ['test-file']
     
     os.makedirs('test_cases/metrics', exist_ok=True)
     for filename in text_file:
@@ -108,10 +109,15 @@ if __name__ == '__main__':
         df = pd.read_excel(f'test_cases/{filename}_all.xlsx')
         # Clean text
         df = df[df['AI_impression'].notna()].reset_index(drop=True)
-        df['impressions'] = df['impressions'].apply(lambda x: x.replace('\n',' '))
-        df['AI_impression'] = df['AI_impression'].apply(lambda x: x.replace('\n',' '))
-        df['findings'] = df['findings'].apply(lambda x: x.replace('\n',' '))
-        df['findings_info'] = df['findings_info'].apply(lambda x: x.replace('\n',' '))
+        # df['impressions'] = df['impressions'].apply(lambda x: x.replace('\n',' '))
+        # df['AI_impression'] = df['AI_impression'].apply(lambda x: x.replace('\n',' '))
+        # df['findings'] = df['findings'].apply(lambda x: x.replace('\n',' '))
+        # df['findings_info'] = df['findings_info'].apply(lambda x: x.replace('\n',' '))
+        df['impressions'] = df['impressions'].apply(lambda x: x.replace('\n',' ') if isinstance(x, str) else str(x))
+        df['AI_impression'] = df['AI_impression'].apply(lambda x: x.replace('\n',' ') if isinstance(x, str) else str(x))
+        df['findings'] = df['findings'].apply(lambda x: x.replace('\n',' ') if isinstance(x, str) else str(x))
+        df['findings_info'] = df['findings_info'].apply(lambda x: x.replace('\n',' ') if isinstance(x, str) else str(x))
+
 
         compute_metrics(df, save_path=f'test_cases/metrics/{filename}_metrics_lexion_overlap.xlsx') 
     

@@ -1,2 +1,10 @@
 .env
 **/.DS_Store
+**/__pycache__
+
+**/checkpoints
+reports_data
+output_test
+output.xlsx
+output_with_impressions.xlsx
+*/test_cases
